@@ -1,0 +1,53 @@
+<div class="chat-container max-w-3xl mx-auto bg-gray-50 rounded-xl shadow-lg overflow-hidden">
+  <div class="chat-header bg-blue-600 text-white p-4">
+    <h2 class="text-xl font-bold tracking-tight">Chat</h2>
+  </div>
+
+  <div class="chat-messages p-4 h-[500px] overflow-y-auto space-y-4">
+    <%= for message <- @messages do %>
+      <div class="chat-message flex items-start gap-3">
+        <div class="bg-blue-100 p-2 rounded-full">
+          <strong class="text-blue-600 text-sm">
+            <%= message.username %>
+          </strong>
+        </div>
+        <div class="bg-white rounded-lg px-4 py-3 shadow-sm max-w-[80%]">
+          <%= message.content %>
+        </div>
+      </div>
+      <% end %>
+  </div>
+
+  <!-- 改进的表单样式 -->
+  <div class="chat-input border-t border-gray-200">
+    <form phx-value-name={@name} phx-submit="send_message" class="bg-white p-4 rounded-lg shadow-lg max-w-full mx-auto">
+      <div class="flex items-center gap-3 mb-4">
+        <!-- 用户信息 -->
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+          <%= if @name && @name !="" , do: String.first(@name) |> String.upcase(), else: "U" %>
+        </div>
+
+        <%= if @editing_name do %>
+          <input type="text" value={@name} phx-blur="save_name" phx-keydown="handle_name_key" phx-key="Enter"
+            placeholder="用户名"
+            class="flex-1 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" autofocus />
+          <button type="button" phx-click="cancel_edit" class="text-gray-400 hover:text-red-500">×</button>
+          <% else %>
+            <span class="flex-1 text-sm font-medium text-gray-700">
+              <%= if @name && @name !="" , do: @name, else: "未命名" %>
+            </span>
+            <button type="button" phx-click="edit_name" class="text-gray-400 hover:text-blue-500">✏</button>
+            <% end %>
+      </div>
+
+      <!-- 消息输入 -->
+      <div class="flex gap-2">
+        <input type="text" name="message" placeholder="输入消息..."
+          class="flex-1 px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+          发送
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

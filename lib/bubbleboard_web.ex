@@ -53,7 +53,7 @@ defmodule BubbleboardWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {BubbleboardWeb.Layouts, :app}
+        layout: {BubbleboardWeb.Layouts, :live}
 
       unquote(html_helpers())
     end
