@@ -45,7 +45,7 @@ class ChatRoom {
         });
         this.channel.on("message:history", payload => {
             console.log("Message history received:", payload);
-            payload.messages.forEach(message => this.displayMessage(message));
+            payload.messages.reverse().forEach(message => this.displayMessage(message));
         });
     }
 
@@ -97,7 +97,8 @@ class ChatRoom {
         });
 
         // 发送消息按钮事件（保留原有逻辑）
-        inputForm.addEventListener("submit", () => {
+        inputForm.addEventListener("submit", (event) => {
+            event.preventDefault(); // 阻止表单默认提交行为
             const messageInput = document.getElementById("message-input");
             const message = messageInput.value;
             if (message) {
