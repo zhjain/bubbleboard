@@ -16,7 +16,9 @@ defmodule Bubbleboard.Application do
       # Start a worker by calling: Bubbleboard.Worker.start_link(arg)
       # {Bubbleboard.Worker, arg},
       # Start to serve requests, typically the last entry
-      BubbleboardWeb.Endpoint
+      Bubbleboard.Board.RoomAgent,
+      BubbleboardWeb.Presence,
+      BubbleboardWeb.Endpoint,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
