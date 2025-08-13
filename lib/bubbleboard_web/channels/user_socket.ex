@@ -41,5 +41,4 @@ defmodule BubbleboardWeb.UserSocket do
   # Returning `nil` makes this socket anonymous.
   @impl true
   def id(socket), do: socket.assigns.user_token
-
 end

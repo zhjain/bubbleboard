@@ -1,87 +1,103 @@
-<div class="max-w-4xl mx-auto my-8 h-96 bg-white rounded-lg shadow-lg flex flex-col">
-  <!-- 聊天室头部 -->
-  <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-    <!--
-    <h2 class="text-lg font-semibold">聊天室</h2>
-  -->
-    <div class="text-sm opacity-90">
-      在线人数: <span id="online-count">0</span>
-    </div>
-  </div>
+<div class="h-screen w-screen overflow-hidden">
+  <!-- 协作白板区域 -->
+  <div id="whiteboard" class="w-full h-full bg-gray-100"></div>
 
-  <!-- 消息显示区域 -->
-  <div class="flex-1 bg-gray-50 overflow-y-auto p-4" id="messages-container">
-    <div class="space-y-3" id="messages">
-      <!-- 消息将通过 JS 动态添加到这里 -->
-    </div>
-  </div>
-
-  <!-- 输入区域 -->
-  <div class="border-t bg-white p-4 rounded-b-lg">
-    <!-- 用户名显示 -->
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-gray-600">当前用户:</span>
-        <span id="current-username" class="text-sm font-medium text-gray-800">未设置</span>
+  <!-- 聊天室区域 -->
+  <div x-data="chat" class="fixed bottom-4 right-4 flex flex-col items-end">
+    <div x-show="showChat" x-transition:enter="transition-all duration-300"
+      x-transition:enter-start="opacity-0 scale-0 translate-x-40 translate-y-48 rounded-full"
+      x-transition:enter-end="opacity-100 scale-100 translate-x-0 translate-y-0 rounded-lg"
+      x-transition:leave="transition-all duration-300"
+      x-transition:leave-start="opacity-100 scale-100 translate-x-0 translate-y-0 rounded-lg"
+      x-transition:leave-end="opacity-0 scale-0 translate-x-40 translate-y-48 rounded-full"
+      class="absolute bottom-0 right-0 w-80 h-96 bg-white rounded-lg shadow-lg flex flex-col">
+      <!-- 聊天室头部 -->
+      <div class="bg-blue-600 text-white px-4 py-4 rounded-t-lg flex justify-between items-center select-none">
+        <h2 class="header-info text-lg font-semibold">聊天室</h2>
+        <div class="flex items-center gap-4">
+          <div class="header-info text-sm opacity-90 select-none">
+            在线人数: <span x-text="online_count"></span>
+          </div>
+          <button @click="showChat = false" type="button"
+            class="text-white hover:text-gray-200 focus:outline-none flex my-auto">
+            <.icon name="hero-minus" class="inline-block w-4 h-4" />
+          </button>
+        </div>
       </div>
-      <div class="flex gap-2">
-        <button id="edit-username-button" type="button"
-          class="text-xs px-3 py-1 text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
-          <.icon name="hero-pencil-square" class="inline-block w-4 h-4" />
-        </button>
-        <button id="clear-username-button" type="button"
-          class="text-xs px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors">
-          <.icon name="hero-trash" class="inline-block w-4 h-4" />
-        </button>
+
+      <!-- 消息显示区域 -->
+      <div x-ref="messageContainer" x-bind:style="{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }"
+        class="flex-1 bg-gray-50 overflow-y-auto p-4">
+        <div class="space-y-3">
+          <!-- 消息将通过 JS 动态添加到这里 -->
+          <template x-for="message in messages" x-bind:key="message.timestamp">
+            <div class="bg-white p-3 rounded-lg shadow-sm">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium text-gray-800 bg-gray-200 px-1 rounded-lg"
+                  x-text="message.user || '匿名'">
+                </span>
+                <span class="text-xs text-gray-500" x-text="new Date(message.timestamp).toLocaleTimeString()">
+                </span>
+              </div>
+              <p class="text-sm pl-1 text-gray-700" x-text="message.body"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- 输入区域 -->
+      <div id="chat-input" class="border-t bg-white p-4 rounded-b-lg">
+        <!-- 用户名显示 -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600">当前用户:</span>
+            <span x-text="username" class="text-sm font-medium text-gray-800">匿名</span>
+          </div>
+          <div class="flex gap-2">
+            <button @click="handleShowEditUser" type="button"
+              class="text-xs px-3 py-1 text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
+              <.icon name="hero-pencil-square" class="inline-block w-4 h-4" />
+            </button>
+            <button @click="handleClearUsername" type="button"
+              class="text-xs px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors">
+              <.icon name="hero-trash" class="inline-block w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 消息输入 -->
+        <form @submit="handleSubmit" class="flex gap-3">
+          <input type="text" x-model="input" placeholder="输入消息..." maxlength="500"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button id="send-button" type="submit"
+            class="px-3 py-2 flex bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <.icon name="hero-paper-airplane" class="inline-block m-auto w-4 h-4" />
+          </button>
+        </form>
       </div>
     </div>
 
-    <!-- 消息输入 -->
-    <form id="input-form" class="flex gap-3">
-      <input type="text" id="message-input" placeholder="输入消息..." maxlength="500"
-        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      <button id="send-button" type="submit"
-        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-        发送
-      </button>
-    </form>
-  </div>
+    <!-- 缩小后的圆形按钮 -->
+    <button x-show="!showChat" @click="showChat = true" x-transition:enter="transition-all duration-300"
+      x-transition:enter-start="opacity-0 scale-0" x-transition:enter-end="opacity-100 scale-100"
+      x-transition:leave="transition-all duration-300" x-transition:leave-start="opacity-100 scale-100"
+      x-transition:leave-end="opacity-0 scale-0"
+      class="absolute bottom-0 right-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700">
+      <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
+    </button>
 
-  <!-- 用户名设置模态框 -->
-  <div id="username-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 w-80 mx-4">
-      <h3 class="text-lg font-semibold mb-4">设置用户名</h3>
-      <input type="text" id="usrnm-input" placeholder="请输入用户名" maxlength="20"
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      <button id="save-button" type="button"
-        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-        保存
-      </button>
+    <!-- 用户名设置模态框 -->
+    <div x-show="showEditUser" @click="e => hideEditUser(e, $el)"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 w-80 mx-4">
+        <h3 class="text-lg font-semibold mb-4">设置用户名</h3>
+        <input x-ref="usernameInput" type="text" x-model="newUsername" placeholder="请输入用户名" maxlength="20"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button @click="handleSave" type="button"
+          class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          保存
+        </button>
+      </div>
     </div>
   </div>
 </div>
-
-<!-- 
-供 JS 参考的消息元素结构：
-
-自己的消息：
-<div class="flex flex-col items-end max-w-xs ml-auto">
-  <div class="bg-blue-600 text-white px-3 py-2 rounded-lg rounded-br-sm">
-    消息内容
-  </div>
-  <div class="text-xs text-gray-500 mt-1">用户名 · 时间</div>
-</div>
-
-别人的消息：
-<div class="flex flex-col items-start max-w-xs mr-auto">
-  <div class="bg-white border px-3 py-2 rounded-lg rounded-bl-sm">
-    消息内容
-  </div>
-  <div class="text-xs text-gray-500 mt-1">用户名 · 时间</div>
-</div>
-
-系统消息：
-<div class="text-center text-sm text-gray-500 my-2">
-  系统消息内容
-</div>
--->

@@ -18,7 +18,7 @@ defmodule Bubbleboard.Application do
       # Start to serve requests, typically the last entry
       Bubbleboard.Board.RoomAgent,
       BubbleboardWeb.Presence,
-      BubbleboardWeb.Endpoint,
+      BubbleboardWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

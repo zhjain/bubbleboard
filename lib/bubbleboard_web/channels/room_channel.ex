@@ -14,11 +14,13 @@ defmodule BubbleboardWeb.RoomChannel do
   @impl true
   def handle_info(:after_join, socket) do
     user = socket.assigns.user || "匿名"
+
     {:ok, _} =
       Presence.track(socket, socket.id, %{
         username: user,
         online_at: System.system_time(:second)
       })
+
     # 发送在线人数
     push(socket, "presence_state", Presence.list(socket))
     push(socket, "message:history", %{messages: RoomAgent.get_state().messages})
@@ -50,6 +52,7 @@ defmodule BubbleboardWeb.RoomChannel do
       user: username,
       online_at: System.system_time(:second)
     })
+
     {:reply, {:ok, %{user: username}}, assign(socket, :user, username)}
   end
 
