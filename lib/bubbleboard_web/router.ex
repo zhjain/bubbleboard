@@ -8,6 +8,7 @@ defmodule BubbleboardWeb.Router do
     plug :put_root_layout, html: {BubbleboardWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :put_user_token
   end
 
   pipeline :api do
@@ -18,6 +19,21 @@ defmodule BubbleboardWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  def put_user_token(conn, _) do
+    assign(conn, :user_token, short_uuid())
+  end
+
+  defp short_uuid() do
+    uuid = UUID.uuid4()
+    hex_str = uuid |> String.replace("-", "") |> String.slice(0, 12)
+
+    {int, ""} = Integer.parse(hex_str, 16)
+
+    int
+    |> Integer.to_string(36)
+    |> String.downcase()
   end
 
   # Other scopes may use custom stacks.

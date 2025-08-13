@@ -25,8 +25,8 @@ defmodule BubbleboardWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   @impl true
-  def connect(_params, socket, _connect_info) do
-    {:ok, socket}
+  def connect(%{"token" => token}, socket, _connect_info) do
+    {:ok, assign(socket, :user_token, token)}
   end
 
   # Socket IDs are topics that allow you to identify all sockets for a given user:
@@ -40,15 +40,6 @@ defmodule BubbleboardWeb.UserSocket do
   #
   # Returning `nil` makes this socket anonymous.
   @impl true
-  def id(_socket), do: short_uuid()
+  def id(socket), do: socket.assigns.user_token
 
-  defp short_uuid() do
-    uuid = UUID.uuid4()
-    hex_str = uuid |> String.replace("-", "") |> String.slice(0, 12)
-
-    {int, ""} = Integer.parse(hex_str, 16)
-    int
-    |> Integer.to_string(36)
-    |> String.downcase()
-  end
 end
