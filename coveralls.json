@@ -1,0 +1,16 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "output_dir": "cover/"
+  },
+  "skip_files": [
+    "test/",
+    "lib/bubbleboard_web/components/layouts.ex",
+    "lib/bubbleboard_web/components/core_components.ex",
+    "lib/bubbleboard_web/gettext.ex",
+    "lib/bubbleboard_web/controllers/page_html.ex",
+    "lib/bubbleboard_web/controllers/error_html.ex",
+    "lib/bubbleboard_web/controllers/error_json.ex"
+  ],
+  "minimum_coverage": 60
+}
