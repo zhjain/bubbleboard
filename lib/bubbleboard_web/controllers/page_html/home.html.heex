@@ -1,10 +1,86 @@
 <div class="h-screen w-screen overflow-hidden">
   <!-- 协作白板区域 -->
-  <div id="whiteboard" class="w-full h-full bg-gray-100"></div>
+  <div x-data="whiteboard" class="w-full h-full bg-gray-100">
+    <!-- 工具栏 -->
+    <div
+      class="fixed top-4 left-4 z-50 flex flex-col gap-2 bg-white p-4 rounded-lg shadow-lg w-48">
+      <label class="text-gray-700 font-semibold mb-2">工具</label>
+
+      <template x-for="tool in tools" x-bind:key="tool.id">
+        <button
+          class="w-full px-3 py-2 rounded border transition-colors text-gray-700 border-gray-300 hover:bg-gray-100"
+          x-bind:class="currentTool === tool.id ? 'bg-blue-500 text-white border-blue-500' : ''"
+          @click="selectTool(tool.id)"
+          x-text="tool.icon + ' ' + tool.name"></button>
+      </template>
+    </div>
+
+    <!-- 当前工具的特殊配置 -->
+    <div
+      class="fixed top-4 left-60 z-50 flex flex-col gap-2 bg-white p-4 rounded-lg shadow-lg w-64"
+      x-show="currentToolConfig.length > 0">
+      <label class="text-gray-700 font-semibold mb-2">选项</label>
+
+      <template x-for="config in currentToolConfig" x-bind:key="config.key">
+        <!-- 下拉选择 -->
+        <div x-show="config.type === 'select'" class="mb-2">
+          <select
+            x-model="globalConfig[config.key]"
+            class="w-full px-3 py-2 border border-gray-300 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <template
+              x-for="option in config.options"
+              x-bind:key="option.value">
+              <option
+                x-bind:value="option.value"
+                x-text="option.label"></option>
+            </template>
+          </select>
+        </div>
+
+        <!-- 开关按钮 -->
+        <div x-show="config.type === 'toggle'" class="mb-2">
+          <button
+            class="w-full px-3 py-2 rounded transition-colors"
+            x-bind:class="globalConfig[config.key] ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'"
+            @click="globalConfig[config.key] = !globalConfig[config.key]"
+            x-text="config.label + ': ' + (globalConfig[config.key] ? '开' : '关')"></button>
+        </div>
+      </template>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="fixed top-80 left-4 z-50 flex flex-col gap-2 w-48">
+      <button
+        class="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+        @click="clearCanvas()">
+        🗑️ 清空
+      </button>
+
+      <button
+        class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="undo()"
+        x-bind:disabled="!canUndo">
+        ↶ 撤销
+      </button>
+    </div>
+
+    <canvas
+      id="whiteboard"
+      x-ref="canvas"
+      @mousedown="handleStart($event)"
+      @mousemove="handleMove($event)"
+      @mouseup="handleEnd($event)"
+      @touchstart="handleStart($event)"
+      @touchmove="handleMove($event)"
+      @touchend="handleEnd($event)"
+      class="w-full h-full bg-white border border-gray-300"></canvas>
+  </div>
 
   <!-- 聊天室区域 -->
   <div x-data="chat" class="fixed bottom-4 right-4 flex flex-col items-end">
-    <div x-show="showChat" x-transition:enter="transition-all duration-300"
+    <div
+      x-show="showChat"
+      x-transition:enter="transition-all duration-300"
       x-transition:enter-start="opacity-0 scale-0 translate-x-40 translate-y-48 rounded-full"
       x-transition:enter-end="opacity-100 scale-100 translate-x-0 translate-y-0 rounded-lg"
       x-transition:leave="transition-all duration-300"
@@ -12,13 +88,16 @@
       x-transition:leave-end="opacity-0 scale-0 translate-x-40 translate-y-48 rounded-full"
       class="absolute bottom-0 right-0 w-80 h-96 bg-white rounded-lg shadow-lg flex flex-col">
       <!-- 聊天室头部 -->
-      <div class="bg-blue-600 text-white px-4 py-4 rounded-t-lg flex justify-between items-center select-none">
+      <div
+        class="bg-blue-600 text-white px-4 py-4 rounded-t-lg flex justify-between items-center select-none">
         <h2 class="header-info text-lg font-semibold">聊天室</h2>
         <div class="flex items-center gap-4">
           <div class="header-info text-sm opacity-90 select-none">
             在线人数: <span x-text="online_count"></span>
           </div>
-          <button @click="showChat = false" type="button"
+          <button
+            @click="showChat = false"
+            type="button"
             class="text-white hover:text-gray-200 focus:outline-none flex my-auto">
             <.icon name="hero-minus" class="inline-block w-4 h-4" />
           </button>
@@ -26,17 +105,22 @@
       </div>
 
       <!-- 消息显示区域 -->
-      <div x-ref="messageContainer" x-bind:style="{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }"
+      <div
+        x-ref="messageContainer"
+        x-bind:style="{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }"
         class="flex-1 bg-gray-50 overflow-y-auto p-4">
         <div class="space-y-3">
           <!-- 消息将通过 JS 动态添加到这里 -->
           <template x-for="message in messages" x-bind:key="message.timestamp">
             <div class="bg-white p-3 rounded-lg shadow-sm">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-sm font-medium text-gray-800 bg-gray-200 px-1 rounded-lg"
+                <span
+                  class="text-sm font-medium text-gray-800 bg-gray-200 px-1 rounded-lg"
                   x-text="message.user || '匿名'">
                 </span>
-                <span class="text-xs text-gray-500" x-text="new Date(message.timestamp).toLocaleTimeString()">
+                <span
+                  class="text-xs text-gray-500"
+                  x-text="new Date(message.timestamp).toLocaleTimeString()">
                 </span>
               </div>
               <p class="text-sm pl-1 text-gray-700" x-text="message.body"></p>
@@ -51,14 +135,20 @@
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <span class="text-sm text-gray-600">当前用户:</span>
-            <span x-text="username" class="text-sm font-medium text-gray-800">匿名</span>
+            <span x-text="username" class="text-sm font-medium text-gray-800">
+              匿名
+            </span>
           </div>
           <div class="flex gap-2">
-            <button @click="handleShowEditUser" type="button"
+            <button
+              @click="handleShowEditUser"
+              type="button"
               class="text-xs px-3 py-1 text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
               <.icon name="hero-pencil-square" class="inline-block w-4 h-4" />
             </button>
-            <button @click="handleClearUsername" type="button"
+            <button
+              @click="handleClearUsername"
+              type="button"
               class="text-xs px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors">
               <.icon name="hero-trash" class="inline-block w-4 h-4" />
             </button>
@@ -67,33 +157,55 @@
 
         <!-- 消息输入 -->
         <form @submit="handleSubmit" class="flex gap-3">
-          <input type="text" x-model="input" placeholder="输入消息..." maxlength="500"
+          <input
+            type="text"
+            x-model="input"
+            placeholder="输入消息..."
+            maxlength="500"
             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <button id="send-button" type="submit"
+          <button
+            id="send-button"
+            type="submit"
             class="px-3 py-2 flex bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <.icon name="hero-paper-airplane" class="inline-block m-auto w-4 h-4" />
+            <.icon name="hero-paper-airplane" class="inline-block m-auto w-4
+            h-4" />
           </button>
         </form>
       </div>
     </div>
 
     <!-- 缩小后的圆形按钮 -->
-    <button x-show="!showChat" @click="showChat = true" x-transition:enter="transition-all duration-300"
-      x-transition:enter-start="opacity-0 scale-0" x-transition:enter-end="opacity-100 scale-100"
-      x-transition:leave="transition-all duration-300" x-transition:leave-start="opacity-100 scale-100"
+    <button
+      x-show="!showChat"
+      @click="showChat = true"
+      x-transition:enter="transition-all duration-300"
+      x-transition:enter-start="opacity-0 scale-0"
+      x-transition:enter-end="opacity-100 scale-100"
+      x-transition:leave="transition-all duration-300"
+      x-transition:leave-start="opacity-100 scale-100"
       x-transition:leave-end="opacity-0 scale-0"
       class="absolute bottom-0 right-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700">
       <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
     </button>
 
     <!-- 用户名设置模态框 -->
-    <div x-show="showEditUser" @click="e => hideEditUser(e, $el)"
+    <div
+      x-show="showEditUser"
+      x-cloak
+      @click="e => hideEditUser(e, $el)"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-white rounded-lg p-6 w-80 mx-4">
         <h3 class="text-lg font-semibold mb-4">设置用户名</h3>
-        <input x-ref="usernameInput" type="text" x-model="newUsername" placeholder="请输入用户名" maxlength="20"
+        <input
+          x-ref="usernameInput"
+          type="text"
+          x-model="newUsername"
+          placeholder="请输入用户名"
+          maxlength="20"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <button @click="handleSave" type="button"
+        <button
+          @click="handleSave"
+          type="button"
           class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           保存
         </button>

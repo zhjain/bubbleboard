@@ -6,7 +6,7 @@ export default () => ({
   presences: {},
   online_count: 0,
   loaded: false,
-  showChat: true,
+  showChat: false,
 
   init() {
     const presence = new Presence(this.$store.channel.chan)
