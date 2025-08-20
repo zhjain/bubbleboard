@@ -1,5 +1,5 @@
 import chat from './chat'
-import whiteboard from './whiteboard/whiteboard'
+import whiteboard from './whiteboard'
 import channel_store from './channel_store'
 
 document.addEventListener('alpine:init', () => {

@@ -1,80 +1,68 @@
 <div class="h-screen w-screen overflow-hidden">
-  <!-- 协作白板区域 -->
-  <div x-data="whiteboard" class="w-full h-full bg-gray-100">
-    <!-- 工具栏 -->
-    <div
-      class="fixed top-4 left-4 z-50 flex flex-col gap-2 bg-white p-4 rounded-lg shadow-lg w-48">
-      <label class="text-gray-700 font-semibold mb-2">工具</label>
-
-      <template x-for="tool in tools" x-bind:key="tool.id">
-        <button
-          class="w-full px-3 py-2 rounded border transition-colors text-gray-700 border-gray-300 hover:bg-gray-100"
-          x-bind:class="currentTool === tool.id ? 'bg-blue-500 text-white border-blue-500' : ''"
-          @click="selectTool(tool.id)"
-          x-text="tool.icon + ' ' + tool.name"></button>
-      </template>
-    </div>
-
-    <!-- 当前工具的特殊配置 -->
-    <div
-      class="fixed top-4 left-60 z-50 flex flex-col gap-2 bg-white p-4 rounded-lg shadow-lg w-64"
-      x-show="currentToolConfig.length > 0">
-      <label class="text-gray-700 font-semibold mb-2">选项</label>
-
-      <template x-for="config in currentToolConfig" x-bind:key="config.key">
-        <!-- 下拉选择 -->
-        <div x-show="config.type === 'select'" class="mb-2">
-          <select
-            x-model="globalConfig[config.key]"
-            class="w-full px-3 py-2 border border-gray-300 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <template
-              x-for="option in config.options"
-              x-bind:key="option.value">
-              <option
-                x-bind:value="option.value"
-                x-text="option.label"></option>
-            </template>
-          </select>
-        </div>
-
-        <!-- 开关按钮 -->
-        <div x-show="config.type === 'toggle'" class="mb-2">
-          <button
-            class="w-full px-3 py-2 rounded transition-colors"
-            x-bind:class="globalConfig[config.key] ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'"
-            @click="globalConfig[config.key] = !globalConfig[config.key]"
-            x-text="config.label + ': ' + (globalConfig[config.key] ? '开' : '关')"></button>
-        </div>
-      </template>
-    </div>
-
-    <!-- 操作按钮 -->
-    <div class="fixed top-80 left-4 z-50 flex flex-col gap-2 w-48">
+<!-- 协作白板区域 -->
+<div x-data="whiteboard" class="w-full h-full bg-gray-50">
+  <!-- 工具栏 -->
+  <div
+    class="fixed top-1/2 left-4 -translate-y-1/2 z-50 flex flex-col gap-2 bg-gray-200 p-2 rounded-xl shadow-xl transition-all duration-300">
+    <template x-for="tool in tools" x-bind:key="tool.id">
       <button
-        class="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-        @click="clearCanvas()">
-        🗑️ 清空
-      </button>
-
-      <button
-        class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="undo()"
-        x-bind:disabled="!canUndo">
-        ↶ 撤销
-      </button>
-    </div>
-
-    <canvas
-      id="whiteboard"
-      x-ref="canvas"
-      @mousedown="handleStart($event)"
-      @mousemove="handleMove($event)"
-      @mouseup="handleEnd($event)"
-      @touchstart="handleStart($event)"
-      @touchmove="handleMove($event)"
-      @touchend="handleEnd($event)"
-      class="w-full h-full bg-white border border-gray-300"></canvas>
+        class="w-10 h-10 flex items-center justify-center rounded-lg border text-lg text-gray-700 border-gray-400 hover:bg-gray-100 hover:border-gray-300 transition-colors duration-200"
+        x-bind:class="currentTool === tool.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : ''"
+        @click="selectTool(tool.id)"
+        x-text="tool.icon"></button>
+    </template>
   </div>
+
+  <!-- 当前工具的特殊配置 -->
+  <div
+    class="fixed top-4 left-84 z-50 flex flex-col gap-3 bg-white p-4 rounded-xl shadow-xl w-72 transition-all duration-300"
+    x-show="currentToolConfig.length > 0">
+    <label class="text-gray-800 font-medium text-sm">选项</label>
+
+    <template x-for="config in currentToolConfig" x-bind:key="config.key">
+      <!-- 下拉选择 -->
+      <div x-show="config.type === 'select'" class="mb-2">
+        
+      </div>
+
+      <!-- 开关按钮 -->
+      <div x-show="config.type === 'toggle'" class="mb-2">
+        <button
+          class="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+          x-bind:class="globalConfig[config.key] ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'"
+          @click="globalConfig[config.key] = !globalConfig[config.key]"
+          x-text="config.label + ': ' + (globalConfig[config.key] ? '开' : '关')"></button>
+      </div>
+    </template>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-16">
+    <button
+      class="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-lg text-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
+      @click="clearCanvas()">
+      🗑️
+    </button>
+
+    <button
+      class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg text-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+      @click="undo()"
+      x-bind:disabled="!canUndo">
+      ↶
+    </button>
+  </div>
+
+  <canvas
+    id="whiteboard"
+    x-ref="canvas"
+    @mousedown="handleStart($event)"
+    @mousemove="handleMove($event)"
+    @mouseup="handleEnd($event)"
+    @touchstart="handleStart($event)"
+    @touchmove="handleMove($event)"
+    @touchend="handleEnd($event)"
+    class="w-full h-full bg-white border border-gray-200 rounded-lg shadow-sm"></canvas>
+</div>
 
   <!-- 聊天室区域 -->
   <div x-data="chat" class="fixed bottom-4 right-4 flex flex-col items-end">

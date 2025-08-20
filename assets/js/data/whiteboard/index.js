@@ -8,10 +8,6 @@ export default () => ({
   ...historyData(),
   ...toolsData(),
 
-  globalConfig: {
-    color: '#000000',
-    size: 15,
-  },
 
   init() {
     this.initCanvas()

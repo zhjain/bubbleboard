@@ -2,6 +2,10 @@ export default function canvasData() {
   return {
     canvas: null,
     ctx: null,
+    globalConfig: {
+      color: '#000000',
+      size: 2,
+    },
 
     initCanvas() {
       this.canvas = this.$refs.canvas
@@ -21,6 +25,7 @@ export default function canvasData() {
       e.preventDefault()
       const pos = this.getEventPos(e)
       const tool = this.getCurrentToolInstance()
+      console.log(this.globalConfig);
       if (tool?.onStart) tool.onStart(this.ctx, pos, this.globalConfig)
     },
 

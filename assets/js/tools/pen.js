@@ -18,10 +18,12 @@ class PenTool extends BaseTool {
     ctx.moveTo(pos.x, pos.y)
     ctx.strokeStyle = globalConfig.color
     ctx.lineWidth = globalConfig.size
+    console.log(ctx.strokeStyle, ctx.lineWidth);
   }
 
   onMove(ctx, pos, globalConfig) {
     if (!this.isDrawing) return
+    console.log(ctx.strokeStyle, ctx.lineWidth);
     ctx.lineTo(pos.x, pos.y)
     ctx.stroke()
   }
@@ -29,6 +31,13 @@ class PenTool extends BaseTool {
   onEnd(ctx, pos, globalConfig) {
     this.isDrawing = false
     ctx.beginPath()
+  }
+
+  getToolConfig() {
+    return [
+      { key: 'color', label: '颜色', type: 'color' },
+      { key: 'size', label: '粗细', type: 'range', min: 1, max: 50 },
+    ]
   }
 }
 
