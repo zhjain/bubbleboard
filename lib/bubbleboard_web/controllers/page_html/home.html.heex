@@ -1,67 +1,266 @@
 <div class="h-screen w-screen overflow-hidden">
   <!-- 协作白板区域 -->
-  <div x-data="whiteboard" class="w-full h-full bg-gray-50">
-    <!-- 工具栏 -->
-    <div
-      x-cloak
-      class="fixed top-1/2 left-4 -translate-y-1/2 z-50 flex flex-col gap-2 bg-gray-200 p-2 rounded-xl shadow-xl transition-all duration-300">
-      <template x-for="tool in tools" x-bind:key="tool.id">
-        <button
-          class="w-10 h-10 flex items-center justify-center rounded-lg border text-lg text-gray-700 border-gray-400 hover:bg-gray-100 hover:border-gray-300 transition-colors duration-200"
-          x-bind:class="currentTool === tool.id ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : ''"
-          @click="selectTool(tool.id)"
-          x-text="tool.icon"></button>
-      </template>
-    </div>
-
-    <!-- 当前工具的特殊配置 -->
-    <div
-      class="fixed top-4 left-84 z-50 flex flex-col gap-3 bg-white p-4 rounded-xl shadow-xl w-72 transition-all duration-300"
-      x-show="currentToolConfig.length > 0"
-      x-cloak>
-      <label class="text-gray-800 font-medium text-sm">选项</label>
-
-      <template x-for="config in currentToolConfig" x-bind:key="config.key">
-        <!-- 下拉选择 -->
-        <div x-show="config.type === 'select'" class="mb-2"></div>
-
-        <!-- 开关按钮 -->
-        <div x-show="config.type === 'toggle'" class="mb-2">
+  <div x-data="whiteboard" class="w-full h-full bg-gray-50 relative">
+    <!-- 悬浮主工具栏 (顶部中间) -->
+    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div class="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg px-3 py-2">
+        <div class="flex items-center gap-1">
+          <!-- 核心绘制工具组 -->
+          <template x-for="tool in tools" x-bind:key="tool.id">
+            <button
+              class="w-10 h-10 flex items-center justify-center rounded-xl text-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200"
+              x-bind:class="currentTool === tool.id ? 'bg-blue-600 text-white shadow-sm' : ''"
+              @click="selectTool(tool.id)"
+              x-text="tool.icon"
+              x-bind:title="tool.name">
+            </button>
+          </template>
+          
+          <!-- 工具分隔线 -->
+          <div class="w-px h-6 bg-gray-300 mx-2"></div>
+          
+          <!-- 形状工具 -->
+          <button 
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-lg text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200"
+            x-bind:class="currentTool === 'shape' ? 'bg-blue-600 text-white shadow-sm' : ''"
+            @click="selectTool('shape')"
+            x-text="getShapeIcon()"
+            title="形状工具">
+          </button>
+          
+          <!-- 分隔线 -->
+          <div class="w-px h-6 bg-gray-300 mx-2"></div>
+          
+          <!-- 操作控制组 -->
           <button
-            class="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-            x-bind:class="globalConfig[config.key] ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'"
-            @click="globalConfig[config.key] = !globalConfig[config.key]"
-            x-text="config.label + ': ' + (globalConfig[config.key] ? '开' : '关')"></button>
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-lg text-gray-600 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="undo()"
+            x-bind:disabled="!canUndo"
+            title="撤销">
+            ↶
+          </button>
+          <button
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-lg text-gray-600 hover:bg-gray-100 transition-all duration-200"
+            @click="clearCanvas()"
+            title="清空画布">
+            🗑️
+          </button>
         </div>
-      </template>
+      </div>
     </div>
 
-    <!-- 操作按钮 -->
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-16">
-      <button
-        class="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-lg text-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
-        @click="clearCanvas()">
-        🗑️
-      </button>
+    <!-- 悬浮二级配置工具栏 (主工具栏下方) -->
+    <div 
+      class="absolute top-20 left-1/2 transform -translate-x-1/2 z-40 transition-all duration-300"
+      x-show="currentTool && showSecondaryToolbar"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+      x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+      x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+      x-cloak>
+      <div class="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg px-4 py-3 min-w-96">
+        <!-- 当前工具配置区 -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <span class="text-sm font-medium text-gray-700" x-text="getCurrentToolName() + ' 设置'"></span>
+            
+            <!-- 动态配置项 -->
+            <template x-if="currentTool === 'pen'">
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-gray-600">颜色</span>
+                  <input type="color" x-model="globalConfig.color" class="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer">
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-gray-600">粗细</span>
+                  <input type="range" x-model="globalConfig.size" min="1" max="50" class="w-24">
+                  <span class="text-xs text-gray-500 w-10 text-center" x-text="globalConfig.size + 'px'"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-gray-600">透明度</span>
+                  <input type="range" x-model="globalConfig.opacity" min="0" max="100" class="w-20">
+                  <span class="text-xs text-gray-500 w-10 text-center" x-text="globalConfig.opacity + '%'"></span>
+                </div>
+              </div>
+            </template>
 
-      <button
-        class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg text-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-        @click="undo()"
-        x-bind:disabled="!canUndo">
-        ↶
-      </button>
+            <!-- 选择工具配置 -->
+            <template x-if="currentTool === 'select'">
+              <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">选择工具：点击选择元素，拖拽框选多个元素</span>
+                
+                <!-- 选择操作按钮 -->
+                <div class="flex items-center gap-2">
+                  <button class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" @click="duplicateSelected()">
+                    复制 (Ctrl+D)
+                  </button>
+                  <button class="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" @click="deleteSelected()">
+                    删除 (Del)
+                  </button>
+                  <button class="text-xs px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors" @click="selectAll()">
+                    全选 (Ctrl+A)
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- 平移工具配置 -->
+            <template x-if="currentTool === 'pan'">
+              <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">无限画布：拖拽平移，滚轮缩放</span>
+                
+                <!-- 缩放控制 -->
+                <div class="flex items-center gap-2">
+                  <button class="text-xs px-2 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors" @click="zoomOut()" title="缩小 (Ctrl+-)">
+                    −
+                  </button>
+                  <span class="text-xs text-gray-600 w-12 text-center" x-text="getViewportInfo().zoomPercent"></span>
+                  <button class="text-xs px-2 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors" @click="zoomIn()" title="放大 (Ctrl++)">
+                    +
+                  </button>
+                </div>
+                
+                <!-- 视图操作按钮 -->
+                <div class="flex items-center gap-2">
+                  <button class="text-xs px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors" @click="setZoom(1)" title="100% (Ctrl+1)">
+                    100%
+                  </button>
+                  <button class="text-xs px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors" @click="fitToScreen()" title="适应内容">
+                    适应
+                  </button>
+                  <button class="text-xs px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors" @click="resetView()" title="重置视图 (Ctrl+0)">
+                    重置
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- 形状工具配置 -->
+            <template x-if="currentTool === 'shape'">
+              <div class="flex items-center gap-4">
+                <!-- 形状类型选择 -->
+                <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button 
+                    class="w-8 h-8 flex items-center justify-center rounded text-sm transition-all duration-200"
+                    x-bind:class="currentShapeType === 'rectangle' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'"
+                    @click="setShapeType('rectangle')"
+                    title="矩形">⬜</button>
+                  <button 
+                    class="w-8 h-8 flex items-center justify-center rounded text-sm transition-all duration-200"
+                    x-bind:class="currentShapeType === 'diamond' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'"
+                    @click="setShapeType('diamond')"
+                    title="菱形">◇</button>
+                  <button 
+                    class="w-8 h-8 flex items-center justify-center rounded text-sm transition-all duration-200"
+                    x-bind:class="currentShapeType === 'parallelogram' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'"
+                    @click="setShapeType('parallelogram')"
+                    title="平行四边形">▱</button>
+                  <button 
+                    class="w-8 h-8 flex items-center justify-center rounded text-sm transition-all duration-200"
+                    x-bind:class="currentShapeType === 'circle' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'"
+                    @click="setShapeType('circle')"
+                    title="圆形">⭕</button>
+                  <button 
+                    class="w-8 h-8 flex items-center justify-center rounded text-sm transition-all duration-200"
+                    x-bind:class="currentShapeType === 'ellipse' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'"
+                    @click="setShapeType('ellipse')"
+                    title="椭圆">⭕</button>
+                </div>
+                
+                <!-- 基础配置 -->
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600">填充</span>
+                    <input type="color" x-model="globalConfig.fill" class="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600">边框</span>
+                    <input type="color" x-model="globalConfig.stroke" class="w-8 h-8 rounded-lg border border-gray-300 cursor-pointer">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600">粗细</span>
+                    <input type="range" x-model="globalConfig.strokeWidth" min="0" max="20" class="w-20">
+                    <span class="text-xs text-gray-500 w-8 text-center" x-text="globalConfig.strokeWidth + 'px'"></span>
+                  </div>
+                  
+                  <!-- 动态特殊配置 -->
+                  <template x-if="currentShapeType === 'rectangle'">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-600">圆角</span>
+                      <input type="range" x-model="globalConfig.cornerRadius" min="0" max="50" class="w-20">
+                      <span class="text-xs text-gray-500 w-8 text-center" x-text="globalConfig.cornerRadius + 'px'"></span>
+                    </div>
+                  </template>
+                  
+                  <template x-if="currentShapeType === 'diamond'">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-600">旋转</span>
+                      <input type="range" x-model="globalConfig.rotation" min="0" max="360" class="w-20">
+                      <span class="text-xs text-gray-500 w-8 text-center" x-text="globalConfig.rotation + '°'"></span>
+                    </div>
+                  </template>
+                  
+                  <template x-if="currentShapeType === 'parallelogram'">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-600">倾斜</span>
+                      <input type="range" x-model="globalConfig.skewAngle" min="-45" max="45" class="w-20">
+                      <span class="text-xs text-gray-500 w-8 text-center" x-text="globalConfig.skewAngle + '°'"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- 配置操作按钮 -->
+          <div class="flex items-center gap-2">
+            <button class="text-xs px-3 py-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors" @click="showSecondaryToolbar = false">
+              收起
+            </button>
+            <button class="text-xs px-3 py-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
+              更多
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <canvas
-      id="whiteboard"
-      x-ref="canvas"
-      @mousedown="handleStart($event)"
-      @mousemove="handleMove($event)"
-      @mouseup="handleEnd($event)"
-      @touchstart="handleStart($event)"
-      @touchmove="handleMove($event)"
-      @touchend="handleEnd($event)"
-      class="w-full h-full bg-white border border-gray-200 rounded-lg shadow-sm"></canvas>
+    <!-- 画布区域 -->
+    <div class="absolute inset-0 overflow-hidden">
+      <canvas
+        id="whiteboard"
+        x-ref="canvas"
+        @mousedown="handleStart($event)"
+        @mousemove="handleMove($event)"
+        @mouseup="handleEnd($event)"
+        @touchstart="handleStart($event)"
+        @touchmove="handleMove($event)"
+        @touchend="handleEnd($event)"
+        class="w-full h-full bg-white cursor-crosshair"
+        x-bind:style="{ cursor: getCurrentToolCursor() }">
+      </canvas>
+      
+      <!-- 画布状态指示器 -->
+      <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200">
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span>当前工具:</span>
+          <span class="font-medium text-gray-800" x-text="getCurrentToolName()"></span>
+        </div>
+      </div>
+
+      <!-- 右下角视图控制 -->
+      <div class="absolute bottom-4 right-4 flex flex-col gap-2">
+        <button class="w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-white transition-all duration-200" title="缩放">
+          🔍
+        </button>
+        <button class="w-10 h-10 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-white transition-all duration-200" title="分享">
+          📤
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- 聊天室区域 -->
