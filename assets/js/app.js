@@ -20,6 +20,13 @@ import "phoenix_html";
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
+import Alpine from 'alpinejs'
+
+window.Alpine = Alpine
+ 
+Alpine.start()
+
+import "iconify-icon";
 import topbar from "../vendor/topbar";
 import "./data/chat_room";
 

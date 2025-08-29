@@ -2,7 +2,7 @@ import BaseTool from './base.js'
 // 橡皮擦工具
 class EraserTool extends BaseTool {
   constructor() {
-    super('eraser', '橡皮擦', '🧽')
+    super('eraser', '橡皮擦', 'ph:eraser')
     this.isErasing = false
   }
 

@@ -2,7 +2,7 @@ import BaseTool from './base.js'
 // 画笔工具
 class PenTool extends BaseTool {
   constructor() {
-    super('pen', '画笔', '🖊️')
+    super('pen', '画笔', 'heroicons:pencil')
     this.isDrawing = false
   }
 
