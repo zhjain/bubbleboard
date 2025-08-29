@@ -42,14 +42,20 @@
       <button
         class="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-lg text-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
         @click="clearCanvas()">
-        🗑️
+        <iconify-icon icon="fontisto:trash" />
       </button>
 
       <button
         class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg text-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         @click="undo()"
         x-bind:disabled="!canUndo">
-        ↶
+        <iconify-icon icon="clarity:undo-line" />
+      </button>
+      <button
+        class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg text-lg hover:bg-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        @click="undo()"
+        x-bind:disabled="true">
+        <iconify-icon icon="clarity:redo-line" />
       </button>
     </div>
 
@@ -89,7 +95,7 @@
             @click="showChat = false"
             type="button"
             class="text-white hover:text-gray-200 focus:outline-none flex my-auto">
-            <.icon name="hero-minus" class="inline-block w-4 h-4" />
+            <iconify-icon icon="heroicons:minus" />
           </button>
         </div>
       </div>
@@ -134,13 +140,13 @@
               @click="handleShowEditUser"
               type="button"
               class="text-xs px-3 py-1 text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors">
-              <.icon name="hero-pencil-square" class="inline-block w-4 h-4" />
+              <iconify-icon icon="heroicons:pencil-square" />
             </button>
             <button
               @click="handleClearUsername"
               type="button"
               class="text-xs px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors">
-              <.icon name="hero-trash" class="inline-block w-4 h-4" />
+              <iconify-icon icon="heroicons:trash" />
             </button>
           </div>
         </div>
@@ -157,8 +163,7 @@
             id="send-button"
             type="submit"
             class="px-3 py-2 flex bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <.icon name="hero-paper-airplane" class="inline-block m-auto w-4
-            h-4" />
+            <iconify-icon icon="heroicons:paper-airplane" class="m-auto" />
           </button>
         </form>
       </div>
@@ -175,7 +180,7 @@
       x-transition:leave-start="opacity-100 scale-100"
       x-transition:leave-end="opacity-0 scale-0"
       class="absolute bottom-0 right-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700">
-      <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
+      <iconify-icon width="16" icon="heroicons:chat-bubble-left-right" />
     </button>
 
     <!-- 用户名设置模态框 -->

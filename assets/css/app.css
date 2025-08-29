@@ -6,3 +6,9 @@
 [x-cloak] {
   display: none;
 }
+
+iconify-icon {
+ display: inline-block;
+ width: 1em;
+ height: 1em;
+}
